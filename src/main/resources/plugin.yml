@@ -1,0 +1,3 @@
+name: 1vs1
+version: '${project.version}'
+main: mattin.vs1.Main
