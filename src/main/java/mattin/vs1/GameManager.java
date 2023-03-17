@@ -1,6 +1,8 @@
 package mattin.vs1;
 
+import de.dytanic.cloudnet.ext.bridge.bukkit.BukkitCloudNetHelper;
 import org.bukkit.*;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -36,14 +38,15 @@ public class GameManager implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         this.scoreboardManager = Bukkit.getScoreboardManager();
         this.scoreboard = scoreboardManager.getNewScoreboard();
+        BukkitCloudNetHelper.setExtra("Classic");
     }
 
     @EventHandler
     public void addPlayer(PlayerJoinEvent event) {
-        if (hasPlayer(event.getPlayer())) {
-            event.getPlayer().kickPlayer("Ein Fehler ist aufgetreten!");
-            return;
-        }
+        //if (hasPlayer(event.getPlayer())) {
+        //    event.getPlayer().kickPlayer("Ein Fehler ist aufgetreten!");
+        //    return;
+        //}
         Player player = event.getPlayer();
         player.setGameMode(GameMode.SURVIVAL);
         GamePlayer gamePlayer = new GamePlayer(player);
@@ -70,6 +73,7 @@ public class GameManager implements Listener {
            Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&',"[&c1vs1&8]&r&l "+player.getName()+"&r beobachtet das Spiel!"));
         }
         updateScoreboard(gamePlayer);
+        BukkitCloudNetHelper.setExtra("Classic");
     }
 
     public void updateScoreboard(GamePlayer gamePlayer) {
@@ -129,42 +133,44 @@ public class GameManager implements Listener {
             player.getInventory().setLeggings(new ItemStack(Material.IRON_LEGGINGS));
             player.getInventory().setHelmet(new ItemStack(Material.IRON_HELMET));
         }
+        BukkitCloudNetHelper.changeToIngame();
     }
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        event.setDeathMessage("");
-        if (!running) {
-            running = false;
-            GamePlayer gamePlayer = getGamePlayer(Bukkit.getPlayer(event.getEntity().getKiller().getName()));
-            Player winner = gamePlayer.getPlayer();
-            Bukkit.broadcastMessage(ChatColor.GOLD + gamePlayer.getPlayer().getName() + ChatColor.RESET + " hat das Spiel gewonnen!");
-            //Bukkit.broadcastMessage("Das Replay dieser Runde lautet: "+ChatColor.BOLD+ChatColor.GOLD+ ReplayAPI.getReplayID());
-            getGamePlayer(event.getEntity().getKiller()).setKills(getGamePlayer(event.getEntity().getKiller()).getKills() + 1);
-            getGamePlayer(event.getEntity().getPlayer()).setDeaths(getGamePlayer(event.getEntity().getPlayer()).getDeaths() + 1);
-            getGamePlayer(event.getEntity().getKiller()).savePlayerData();
-            getGamePlayer(event.getEntity().getPlayer()).savePlayerData();
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                player.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 100, 1);
-            }
-            Entity dragon = winner.getWorld().spawnEntity(winner.getLocation(), EntityType.ENDER_DRAGON);
-            dragon.addPassenger(winner);
-            Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-                dragon.remove();
-                winner.setFallDistance(-100.0F);
-                Bukkit.shutdown();
-            }, 200L);
+        GamePlayer gamePlayer = getGamePlayer(Bukkit.getPlayer(event.getEntity().getKiller().getName()));
+        Player winner = gamePlayer.getPlayer();
+        event.setDeathMessage(ChatColor.GOLD + gamePlayer.getPlayer().getName() + ChatColor.RESET + " hat das Spiel gewonnen!");
+        //Bukkit.broadcastMessage("Das Replay dieser Runde lautet: "+ChatColor.BOLD+ChatColor.GOLD+ ReplayAPI.getReplayID());
+        getGamePlayer(event.getEntity().getKiller()).setKills(getGamePlayer(event.getEntity().getKiller()).getKills() + 1);
+        getGamePlayer(event.getEntity().getPlayer()).setDeaths(getGamePlayer(event.getEntity().getPlayer()).getDeaths() + 1);
+        getGamePlayer(event.getEntity().getKiller()).savePlayerData();
+        getGamePlayer(event.getEntity().getPlayer()).savePlayerData();
+        event.getEntity().getPlayer().setGameMode(GameMode.SPECTATOR);
+        winner.getInventory().setItem(0, new ItemStack(Material.DIAMOND_SWORD));
+        winner.getInventory().setItem(1, new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 10));
+        winner.getInventory().setItem(2, new ItemStack(Material.DIAMOND, 64));
+        winner.getInventory().setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
+        winner.getInventory().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
+        winner.getInventory().setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
+        winner.getInventory().setHelmet(new ItemStack(Material.DIAMOND_HELMET));
+        winner.setFlying(true);
+        winner.setDisplayName("Sieger");
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 100, 1);
+            player.getInventory().clear();
         }
-        else {
-            return;
-        }
+        Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+            Bukkit.shutdown();
+        }, 200L);
+        this.running = false;
     }
 
     @EventHandler
     public void motdEvent(ServerListPingEvent event) {
         event.setMaxPlayers(3);
         if (running) {
-            event.setMotd("[Spectate]");
+            event.setMotd("Zuschauen?");
         }
         else {
             event.setMotd("Warte...");

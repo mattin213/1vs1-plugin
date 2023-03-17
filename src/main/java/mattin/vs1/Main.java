@@ -9,6 +9,7 @@ public final class Main extends JavaPlugin {
     public void onEnable() {
         // Plugin startup logic
         Bukkit.getPluginManager().registerEvents(new GameManager(this), this);
+        //CommandAPI.onLoad(new CommandAPIConfig());
     }
 
     @Override
