@@ -18,6 +18,7 @@ import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
 import java.util.HashMap;
@@ -32,7 +33,7 @@ public class GameManager implements Listener {
     private boolean running;
 
 
-    public GameManager(JavaPlugin plugin) {
+    public GameManager(@NotNull JavaPlugin plugin) {
         this.plugin = plugin;
         this.players = new HashMap<>();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
